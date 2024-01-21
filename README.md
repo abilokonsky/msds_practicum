@@ -9,17 +9,19 @@ Traditional computer vision libraries are excellent at identifying and segmentin
 
 # Methodology
 
-Build a .stl of a swing-arm object with adjustable angles and 3d print it
+1 Build a .stl of a swing-arm object with adjustable angles and 3d print it
 
-Synthetically generate images of the .stl at every 5 degree orientation
+2 Synthetically generate images of the .stl at every 5 degree orientation of its base, and every 5 degree angle of elevation from a 45 degree elevated angle of observation.
+  This amounts to 1,296 training configurations.
+  Should we also add the permutation of modifying the angle of observation this will amount to 23,328 training configurations.
 
-Train the model using a to-be-determined system.
+3 Train the model using a to-be-determined system.
 
 Deploy the model to run in an edge configuration using an NVIDIA Orin Nano and a MIDI PCI camera in a lab environment.
-  Measure the accuracy that model can achieve at determining the object's elevation angle and orientation.
+  Measure the accuracy that model can achieve at determining the real-world printed object's elevation angle and orientation across 10 seconds of video.
 
 Deploy the model to run in an edge configuration using an NVIDIA Orin Nano and a MIDI PCI camera in a cluttered "real-world" environment.
-  Measure the accuracy that model can achieve at determining the object's angle and orientation.
+  Measure the accuracy that model can achieve at determining the real-world printed object's elevation angle and orientation across 10 seconds of video.
 
 # Lessons Learned
 
