@@ -2,6 +2,11 @@
 Using synthetically trained computer vision to detect changes in the set angle of an adjustable device.
 ![image](https://github.com/abilokonsky/msds_practicum/assets/62521066/51a88b7b-e448-43e5-9d9b-3cc7a5aaedf4)
 
+alternate setup:
+https://github.com/abilokonsky/msds_practicum/assets/62521066/e460db75-d56f-4a7c-8a65-f707bef0492a
+
+
+
 # Background
 The intent of this project is to evaluate the possibility of synthetically trained computer vision to understand the implications of the geometric orientation of objects in the real world.  This can be critically important for machine decisions regarding safety and understanding of the environment.  By enabling and deploying such decision making at the edge, IoT devices can more rapidly solve life threatening events.  
 
