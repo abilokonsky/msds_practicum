@@ -12,7 +12,9 @@ Traditional computer vision libraries are excellent at identifying and segmentin
 
 1 Build a .stl of a swing-arm object with adjustable angles and 3d print it
 
-2 Synthetically generate images of the .stl at every 5 degree orientation of its base, and every 5 degree angle of elevation from a 45 degree elevated angle of observation.
+2 Synthetically generate images of the .stl at every 5 degree angle of elevation from a 45 degree elevated angle of observation.
+  This amounts to 19 training configurations.
+  Then train for each 19 angles of elevation, train at every 5 degree orientation of its base,
   This amounts to 1,296 training configurations.
   Should we also add the permutation of modifying the angle of observation this will amount to 23,328 training configurations.
 
