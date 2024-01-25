@@ -21,7 +21,7 @@ Traditional computer vision libraries are excellent at identifying and segmentin
 4 Deploy the model to run in an edge configuration using an NVIDIA Orin Nano and a MIPI PCI camera in a lab environment.
   Measure the accuracy that model can achieve at determining the real-world printed object's elevation angle and orientation across 10 seconds of video.
 
-5 Deploy the model to run in an edge configuration using an NVIDIA Orin Nano and a MIDI PCI camera in a cluttered "real-world" environment.
+5 Deploy the model to run in an edge configuration using an NVIDIA Orin Nano and a MIPI PCI camera in a cluttered "real-world" environment.
   Measure the accuracy that model can achieve at determining the real-world printed object's elevation angle and orientation across 10 seconds of video.
 
 # Results
