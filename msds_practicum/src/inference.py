@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 # Load the saved TensorFlow model
-model = tf.keras.models.load_model('models/trained_models/Model_0001_CNN_ResNet__loss_sparse_categorical_crossentropy')
+model = tf.keras.models.load_model('models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy')
 
 def preprocess_frame(frame):
     # Resize frame to match the input shape expected by the model (256x256)
