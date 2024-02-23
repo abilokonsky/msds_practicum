@@ -17,9 +17,13 @@ def capture_frame(buffer, width, height):
     success, map_info = buffer.map(Gst.MapFlags.READ)
     if not success:
         raise RuntimeError('Could not map buffer for reading')
-    frame = np.frombuffer(map_info.data, dtype=np.uint8, count=width * height * 3 // 2)
+    # Ensure correct calculation for the NV12 format buffer size
+    expected_size = width * height * 3 // 2
+    if map_info.size < expected_size:
+        raise RuntimeError(f'Buffer is smaller than expected size: {map_info.size} < {expected_size}')
+    frame = np.frombuffer(map_info.data, dtype=np.uint8, count=map_info.size)
     buffer.unmap(map_info)
-    frame = cv2.cvtColor(frame.reshape(height * 3 // 2, width), cv2.COLOR_YUV2RGB_NV12)
+    frame = cv2.cvtColor(frame.reshape(height + height // 2, width), cv2.COLOR_YUV2BGR_NV12)
     return frame
 
 def preprocess_image(image):
@@ -31,22 +35,14 @@ def perform_prediction(image_np):
     print(f"Prediction: {prediction}")
 
 def process_rolling_windows(frame, window_size=(256, 256)):
-    # Assuming frame is a full-sized image read into a numpy array
     height, width, _ = frame.shape
-    stride = 128  # Define your stride. This controls the overlap between windows
+    stride = 128  # Define your stride for overlapping windows
 
-    # Iterate over the frame with the given stride
     for y in range(0, height - window_size[1] + 1, stride):
         for x in range(0, width - window_size[0] + 1, stride):
-            # Extract the window
             window = frame[y:y + window_size[1], x:x + window_size[0]]
-
-            # Preprocess the window as needed (e.g., normalization)
             preprocessed_window = preprocess_image(window)
-
-            # Perform prediction
             perform_prediction(preprocessed_window)
-            
 
 def on_new_sample(appsink):
     sample = appsink.emit('pull-sample')
@@ -57,13 +53,10 @@ def on_new_sample(appsink):
         width = structure.get_value('width')
         height = structure.get_value('height')
         
-        # Capture the whole frame
         frame = capture_frame(buffer, width, height)
-        # Process rolling windows of the frame
         process_rolling_windows(frame)
 
     return Gst.FlowReturn.OK
-
 
 
 # Create GStreamer pipeline
