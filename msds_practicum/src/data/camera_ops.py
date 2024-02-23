@@ -1,14 +1,16 @@
 import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GLib
-import tensorflow as tf
+
+import cv2
 import numpy as np
-import cv2  # Ensure OpenCV is imported for cv2.cvtColor
+import tensorflow as tf
+from gi.repository import Gst, GLib
+
 
 # Initialize GStreamer
 Gst.init(None)
 
-MODEL_DIR = 'models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
+# Load the TensorFlow model
+MODEL_DIR = '/home/andrey/msds_practicum/msds_practicum/src/models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
 model = tf.keras.models.load_model(MODEL_DIR)
 
 def capture_frame(buffer, width, height):
@@ -45,6 +47,7 @@ def on_new_sample(appsink):
 # Create GStreamer elements
 source = Gst.ElementFactory.make('nvarguscamerasrc', 'source')
 caps_filter = Gst.ElementFactory.make('capsfilter', 'caps_filter')
+caps_filter.set_property('caps', Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1280, height=720, framerate=21/1, format=NV12"))
 vidconv1 = Gst.ElementFactory.make('nvvidconv', 'vidconv1')
 vidconv2 = Gst.ElementFactory.make('nvvidconv', 'vidconv2')
 transform = Gst.ElementFactory.make('nvegltransform', 'transform')
@@ -87,6 +90,6 @@ loop = GLib.MainLoop()
 try:
     loop.run()
 except KeyboardInterrupt:
-    pass
+    print('interrupted by user')
 finally:
     pipeline.set_state(Gst.State.NULL)
