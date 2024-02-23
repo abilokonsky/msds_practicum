@@ -18,6 +18,8 @@ def capture_frame(buffer, width, height):
     if not success:
         raise RuntimeError('Could not map buffer for reading')
     # Ensure correct calculation for the NV12 format buffer size
+
+    print("Frame captured")
     expected_size = width * height * 3 // 2
     if map_info.size < expected_size:
         raise RuntimeError(f'Buffer is smaller than expected size: {map_info.size} < {expected_size}')
@@ -39,12 +41,15 @@ def process_rolling_windows(frame, window_size=(256, 256)):
     stride = 128  # Define your stride for overlapping windows
 
     for y in range(0, height - window_size[1] + 1, stride):
+        print("Processing window") 
         for x in range(0, width - window_size[0] + 1, stride):
             window = frame[y:y + window_size[1], x:x + window_size[0]]
             preprocessed_window = preprocess_image(window)
             perform_prediction(preprocessed_window)
 
 def on_new_sample(appsink):
+
+    print("Sample received")  # Debug print
     sample = appsink.emit('pull-sample')
     if isinstance(sample, Gst.Sample):
         buffer = sample.get_buffer()
