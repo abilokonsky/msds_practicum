@@ -34,19 +34,35 @@ def preprocess_image(image):
 
 def perform_prediction(image_np):
     prediction = model.predict(np.expand_dims(image_np, axis=0))
-    print(f"Prediction: {prediction}")
+    return prediction
+
+def overlay_prediction_on_frame(frame, prediction, position, window_size=(256, 256)):
+    # Convert prediction to text
+    prediction_text = str(prediction)
+    
+    # Define position for text (e.g., top-left corner of the window)
+    text_position = (position[0], position[1] + 20)  # Adjust based on your needs
+    
+    # Overlay text on the frame
+    cv2.putText(frame, prediction_text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 
+                0.5, (255, 0, 0), 2)
+    
 
 def process_rolling_windows(frame, window_size=(256, 256)):
     height, width, _ = frame.shape
-    stride = 128  # Define your stride for overlapping windows
-
+    stride = 128  # Or any stride you're using
+    
     for y in range(0, height - window_size[1] + 1, stride):
-        print("Processing window") 
         for x in range(0, width - window_size[0] + 1, stride):
             window = frame[y:y + window_size[1], x:x + window_size[0]]
             preprocessed_window = preprocess_image(window)
-            perform_prediction(preprocessed_window)
-
+            
+            # Perform prediction and get the result
+            prediction = perform_prediction(preprocessed_window)
+            
+            # Overlay the prediction on the original frame
+            overlay_prediction_on_frame(frame, prediction, (x, y), window_size)
+            
 def on_new_sample(appsink):
 
     print("Sample received")  # Debug print
