@@ -97,12 +97,14 @@ pipeline = Gst.Pipeline.new("my-pipeline")
 
 # Create and configure elements
 source = Gst.ElementFactory.make("nvarguscamerasrc", "source")
+capsfilter = Gst.ElementFactory.make("capsfilter", "capsfilter")
+# Example: Set to 1080p at 30 fps for better performance in real-time applications
+capsfilter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1920, height=1080, framerate=30/1, format=NV12"))
 tee = Gst.ElementFactory.make("tee", "tee")
 queue1 = Gst.ElementFactory.make("queue", "queue1")
 queue2 = Gst.ElementFactory.make("queue", "queue2")
 vidconv1 = Gst.ElementFactory.make("nvvidconv", "vidconv1")
 vidconv2 = Gst.ElementFactory.make("nvvidconv", "vidconv2")
-capsfilter = Gst.ElementFactory.make("capsfilter", "capsfilter")
 appsink = Gst.ElementFactory.make("appsink", "appsink")
 transform = Gst.ElementFactory.make("nvegltransform", "transform")
 sink = Gst.ElementFactory.make("nveglglessink", "sink")
