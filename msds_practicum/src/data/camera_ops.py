@@ -41,7 +41,7 @@ def capture_frame(buffer, width, height):
     success, map_info = buffer.map(Gst.MapFlags.READ)
     if not success:
         raise RuntimeError('Could not map buffer for reading')
-
+    
     # Diagnostic logging
     print(f"Actual buffer size: {map_info.size}")
     expected_size = width * height * 3 // 2
@@ -126,8 +126,8 @@ pipeline = Gst.Pipeline.new("my-pipeline")
 # Create and configure elements
 source = Gst.ElementFactory.make("nvarguscamerasrc", "source")
 capsfilter = Gst.ElementFactory.make("capsfilter", "capsfilter")
+capsfilter.set_property("caps", Gst.Caps.from_string("video/x-raw, format=(string)RGB, width=1280, height=720"))
 # Example: Set to 1080p at 30 fps for better performance in real-time applications
-capsfilter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1920, height=1080, framerate=30/1, format=NV12"))
 tee = Gst.ElementFactory.make("tee", "tee")
 queue1 = Gst.ElementFactory.make("queue", "queue1")
 queue2 = Gst.ElementFactory.make("queue", "queue2")
