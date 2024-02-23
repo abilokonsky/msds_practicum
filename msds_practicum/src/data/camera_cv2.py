@@ -75,7 +75,7 @@ class FrameSaver:
 
 if __name__ == "__main__":
     class_names = [f"{5 * i} degrees" for i in range(1, 20)]
-    model_path = '/path/to/your/model'
+    model_path = '/home/andrey/msds_practicum/msds_practicum/src/models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
     processor = PredictionProcessor(class_names, model_path)
     saver = FrameSaver(processor)
     saver.run(10)
