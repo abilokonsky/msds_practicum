@@ -33,7 +33,7 @@ def preprocess_image(image):
     return image
 
 def perform_prediction(image_np):
-    prediction = model.predict(np.expand_dims(image_np, axis=0))
+    prediction = model.predict(image_np.reshape(1, 256, 256, 3))
     return prediction
 
 def overlay_prediction_on_frame(frame, prediction, position, window_size=(256, 256)):
@@ -49,6 +49,7 @@ def overlay_prediction_on_frame(frame, prediction, position, window_size=(256, 2
     
 
 def process_rolling_windows(frame, window_size=(256, 256)):
+    print("processing rolling windows")
     height, width, _ = frame.shape
     stride = 128  # Or any stride you're using
     
@@ -62,7 +63,7 @@ def process_rolling_windows(frame, window_size=(256, 256)):
             
             # Overlay the prediction on the original frame
             overlay_prediction_on_frame(frame, prediction, (x, y), window_size)
-            
+
 def on_new_sample(appsink):
 
     print("Sample received")  # Debug print
