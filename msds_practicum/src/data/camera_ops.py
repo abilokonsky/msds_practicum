@@ -42,19 +42,16 @@ def capture_frame(buffer, width, height):
     if not success:
         raise RuntimeError('Could not map buffer for reading')
     
-    # Diagnostic logging
-    print(f"Actual buffer size: {map_info.size}")
-    expected_size = width * height * 3 // 2
-    print(f"Expected buffer size (NV12): {expected_size}")
+    # Correct buffer size calculation for RGB data
+    expected_size = width * height * 3
+    print(f"Actual buffer size: {map_info.size}, Expected buffer size: {expected_size}")
 
     if map_info.size < expected_size:
         raise RuntimeError(f'Buffer is smaller than expected size: {map_info.size} < {expected_size}')
     
-    # Assuming the buffer size is correct, proceed with frame extraction
     try:
-        frame = np.frombuffer(map_info.data, dtype=np.uint8, count=map_info.size)
-        
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Directly reshape the buffer data to an RGB image
+        frame = np.frombuffer(map_info.data, dtype=np.uint8).reshape(height, width, 3)
     except Exception as e:
         print(f"Error processing frame: {e}")
         frame = None
