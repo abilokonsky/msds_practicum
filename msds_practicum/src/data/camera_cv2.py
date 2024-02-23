@@ -1,27 +1,24 @@
-import subprocess
+import cv2
 import time
-import os
 
-image_path = 'images/captured_image.jpg'  # Ensure this path is accessible and writable
-
-# Start 'feh' to display the image; it will auto-refresh when the file changes.
-# Use '--reload' with a large number to effectively pause on the current image.
-feh_process = subprocess.Popen(['feh', '--reload', '99999', image_path])
+# Initialize the camera
+# The device number might vary (often 0 or 1 for built-in/webcams)
+cap = cv2.VideoCapture(0)  
 
 try:
     while True:
-        # Capture an image
-        # Ensure 'nvgstcapture-1.0' saves the image to 'image_path'
-        subprocess.run(['nvgstcapture-1.0', '--image-res=8', f'--file-name={image_path}'])
+        # Capture frame-by-frame
+        ret, frame = cap.read()
 
-        print("Image captured.")
+        if ret:
+            # Save the captured image to disk
+            cv2.imwrite('captured_image.png', frame)
+            print("Image captured and saved.")
 
-        # 'feh' automatically reloads the image when the file changes.
         # Wait for a few seconds before capturing the next image
         time.sleep(2)  # Adjust the sleep time as needed
 
-except KeyboardInterrupt:
-    print("Stopped by user.")
 finally:
-    # Clean up: terminate 'feh' when done
-    feh_process.terminate()
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()
