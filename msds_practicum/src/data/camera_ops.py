@@ -1,4 +1,5 @@
 import gi
+
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -8,7 +9,7 @@ from gi.repository import Gst, GLib
 Gst.init(None)
 
 # Load the TensorFlow model
-MODEL_DIR = '../models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
+MODEL_DIR = '/home/andrey/msds_practicum/msds_practicum/src/models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
 model = tf.keras.models.load_model(MODEL_DIR)
 
 def capture_frame(buffer, width, height):
@@ -63,7 +64,7 @@ def on_new_sample(appsink):
 # Create the elements
 source = Gst.ElementFactory.make('nvarguscamerasrc', 'source')
 caps_filter = Gst.ElementFactory.make('capsfilter', 'caps_filter')
-caps_filter.set_property('caps', Gst.Caps.from_string("video/x-raw(memory:NVMM), width=3280, height=2464, framerate=21/1, format=NV12"))
+caps_filter.set_property('caps', Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1280, height=720, framerate=21/1, format=NV12"))
 vidconv1 = Gst.ElementFactory.make('nvvidconv', 'vidconv1')
 vidconv2 = Gst.ElementFactory.make('nvvidconv', 'vidconv2')
 transform = Gst.ElementFactory.make('nvegltransform', 'transform')
@@ -76,9 +77,10 @@ vidconv1.set_property('flip-method', 2)
 # Create the empty pipeline
 pipeline = Gst.Pipeline.new('test-pipeline')
 
-if not pipeline or not source or not caps_filter or not vidconv1 or not vidconv2 or not transform or not sink:
-    print("Not all elements could be created.")
-    exit(-1)
+appsink = Gst.ElementFactory.make('appsink', 'appsink')
+appsink.set_property('emit-signals', True)
+appsink.connect('new-sample', on_new_sample)
+
 
 # Build the pipeline
 pipeline.add(source)
@@ -86,6 +88,7 @@ pipeline.add(caps_filter)
 pipeline.add(vidconv1)
 pipeline.add(vidconv2)
 pipeline.add(transform)
+pipeline.add(appsink)
 pipeline.add(sink)
 
 
@@ -107,12 +110,7 @@ if not transform.link(sink):
     exit(-1)
 
 # Set the pipeline to "PLAYING" state
-print("Starting pipeline")
-pipeline = Gst.Pipeline.new('test-pipeline')
-
-appsink = Gst.ElementFactory.make('appsink', 'appsink')
-appsink.set_property('emit-signals', True)
-appsink.connect('new-sample', on_new_sample)
+pipeline.set_state(Gst.State.PLAYING)
 
 # Add and link the appsink element just before the sink element
 pipeline.add(appsink)
@@ -124,6 +122,6 @@ loop = GLib.MainLoop()
 try:
     loop.run()
 except KeyboardInterrupt:
-    pass
+    print('interrupted by user')
 finally:
     pipeline.set_state(Gst.State.NULL)
