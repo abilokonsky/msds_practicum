@@ -144,7 +144,6 @@ if not all([source, tee, queue1, queue2, vidconv1, vidconv2, capsfilter, appsink
 
 # Set properties
 source.set_property("sensor_id", 0)
-capsfilter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1280, height=720, framerate=30/1, format=NV12"))
 appsink.set_property("emit-signals", True)
 appsink.connect("new-sample", on_new_sample)
 
