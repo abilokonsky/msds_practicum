@@ -53,7 +53,8 @@ def capture_frame(buffer, width, height):
     # Assuming the buffer size is correct, proceed with frame extraction
     try:
         frame = np.frombuffer(map_info.data, dtype=np.uint8, count=map_info.size)
-        frame = cv2.cvtColor(frame.reshape(height + height // 2, width), cv2.COLOR_YUV2BGR_NV12)
+        
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     except Exception as e:
         print(f"Error processing frame: {e}")
         frame = None
