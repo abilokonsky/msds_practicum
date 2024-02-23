@@ -1,5 +1,5 @@
 import gi
-
+gi.require_version('Gst', '1.0')    
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -20,7 +20,6 @@ def capture_frame(buffer, width, height):
     frame = np.frombuffer(map_info.data, dtype=np.uint8, count=width * height * 3 // 2)
     buffer.unmap(map_info)
     frame = cv2.cvtColor(frame.reshape(height * 3 // 2, width), cv2.COLOR_YUV2RGB_NV12)
-    frame = cv2.resize(frame, (256, 256))
     return frame
 
 def preprocess_image(image):
@@ -31,6 +30,24 @@ def perform_prediction(image_np):
     prediction = model.predict(np.expand_dims(image_np, axis=0))
     print(f"Prediction: {prediction}")
 
+def process_rolling_windows(frame, window_size=(256, 256)):
+    # Assuming frame is a full-sized image read into a numpy array
+    height, width, _ = frame.shape
+    stride = 128  # Define your stride. This controls the overlap between windows
+
+    # Iterate over the frame with the given stride
+    for y in range(0, height - window_size[1] + 1, stride):
+        for x in range(0, width - window_size[0] + 1, stride):
+            # Extract the window
+            window = frame[y:y + window_size[1], x:x + window_size[0]]
+
+            # Preprocess the window as needed (e.g., normalization)
+            preprocessed_window = preprocess_image(window)
+
+            # Perform prediction
+            perform_prediction(preprocessed_window)
+            
+
 def on_new_sample(appsink):
     sample = appsink.emit('pull-sample')
     if isinstance(sample, Gst.Sample):
@@ -39,10 +56,15 @@ def on_new_sample(appsink):
         structure = caps.get_structure(0)
         width = structure.get_value('width')
         height = structure.get_value('height')
+        
+        # Capture the whole frame
         frame = capture_frame(buffer, width, height)
-        preprocessed_frame = preprocess_image(frame)
-        perform_prediction(preprocessed_frame)
+        # Process rolling windows of the frame
+        process_rolling_windows(frame)
+
     return Gst.FlowReturn.OK
+
+
 
 # Create GStreamer pipeline
 pipeline = Gst.Pipeline.new("my-pipeline")
