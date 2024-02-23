@@ -17,16 +17,27 @@ def capture_frame(buffer, width, height):
     success, map_info = buffer.map(Gst.MapFlags.READ)
     if not success:
         raise RuntimeError('Could not map buffer for reading')
-    # Ensure correct calculation for the NV12 format buffer size
 
-    print("Frame captured")
+    # Diagnostic logging
+    print(f"Actual buffer size: {map_info.size}")
     expected_size = width * height * 3 // 2
+    print(f"Expected buffer size (NV12): {expected_size}")
+
     if map_info.size < expected_size:
         raise RuntimeError(f'Buffer is smaller than expected size: {map_info.size} < {expected_size}')
-    frame = np.frombuffer(map_info.data, dtype=np.uint8, count=map_info.size)
-    buffer.unmap(map_info)
-    frame = cv2.cvtColor(frame.reshape(height + height // 2, width), cv2.COLOR_YUV2BGR_NV12)
+    
+    # Assuming the buffer size is correct, proceed with frame extraction
+    try:
+        frame = np.frombuffer(map_info.data, dtype=np.uint8, count=map_info.size)
+        frame = cv2.cvtColor(frame.reshape(height + height // 2, width), cv2.COLOR_YUV2BGR_NV12)
+    except Exception as e:
+        print(f"Error processing frame: {e}")
+        frame = None
+    finally:
+        buffer.unmap(map_info)
+    
     return frame
+
 
 def preprocess_image(image):
     image = image.astype('float32') / 255.0
@@ -65,7 +76,6 @@ def process_rolling_windows(frame, window_size=(256, 256)):
             overlay_prediction_on_frame(frame, prediction, (x, y), window_size)
 
 def on_new_sample(appsink):
-
     print("Sample received")  # Debug print
     sample = appsink.emit('pull-sample')
     if isinstance(sample, Gst.Sample):
@@ -74,11 +84,12 @@ def on_new_sample(appsink):
         structure = caps.get_structure(0)
         width = structure.get_value('width')
         height = structure.get_value('height')
-        
+
         frame = capture_frame(buffer, width, height)
         process_rolling_windows(frame)
 
     return Gst.FlowReturn.OK
+
 
 
 # Create GStreamer pipeline
