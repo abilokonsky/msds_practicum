@@ -9,6 +9,30 @@ from gi.repository import Gst, GLib
 # Initialize GStreamer
 Gst.init(None)
 
+
+class PredictionProcessor:
+    def __init__(self, class_names):
+        self.class_names = class_names
+
+    def process(self, prediction):
+        # Assuming `prediction` is a numpy array of shape (1, num_classes)
+        # Flatten the prediction to simplify indexing
+        prediction = prediction.flatten()
+        
+        # Get indices of the top 3 predictions in descending order
+        top_indices = np.argsort(prediction)[::-1][:1]
+        
+        # Retrieve the class names and probabilities for the top 3 predictions
+        top_classes = [self.class_names[i] for i in top_indices]
+        top_probabilities = prediction[top_indices]
+        
+        # Return a list of tuples containing class names and their probabilities
+        return list(zip(top_classes, top_probabilities))
+
+# Example usage
+class_names = [f"{5 * i} degrees" for i in range(1, 20)]  # Adjust to match the number of your classes
+processor = PredictionProcessor(class_names)
+
 # Load the TensorFlow model
 MODEL_DIR = '/home/andrey/msds_practicum/msds_practicum/src/models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
 model = tf.keras.models.load_model(MODEL_DIR)
@@ -44,18 +68,22 @@ def preprocess_image(image):
     return image
 
 def perform_prediction(image_np):
-    prediction = model.predict(image_np.reshape(1, 256, 256, 3))
-    return prediction
 
-def overlay_prediction_on_frame(frame, prediction, position, window_size=(256, 256)):
+    prediction_array = np.array([model.predict(np.expand_dims(image_np, axis=0))], dtype=float)
+    top_predictions = processor.process(prediction_array)
+    for i, (class_name, probability) in enumerate(top_predictions, start=1):
+    prediction_str = str(f"{class_name} certainty = {probability*100:.2f}% " )
+
+    return prediction_str
+
+def overlay_prediction_on_frame(frame, prediction_str, position, window_size=(256, 256)):
     # Convert prediction to text
-    prediction_text = str(prediction)
-    
+
     # Define position for text (e.g., top-left corner of the window)
     text_position = (position[0], position[1] + 20)  # Adjust based on your needs
     
     # Overlay text on the frame
-    cv2.putText(frame, prediction_text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 
+    cv2.putText(frame, prediction_str, text_position, cv2.FONT_HERSHEY_SIMPLEX, 
                 0.5, (255, 0, 0), 2)
     
 
@@ -70,10 +98,10 @@ def process_rolling_windows(frame, window_size=(256, 256)):
             preprocessed_window = preprocess_image(window)
             
             # Perform prediction and get the result
-            prediction = perform_prediction(preprocessed_window)
+            prediction_str = perform_prediction(preprocessed_window)
             
             # Overlay the prediction on the original frame
-            overlay_prediction_on_frame(frame, prediction, (x, y), window_size)
+            overlay_prediction_on_frame(frame, prediction_str, (x, y), window_size)
 
 def on_new_sample(appsink):
     print("Sample received")  # Debug print
