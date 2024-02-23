@@ -1,9 +1,64 @@
 import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
+import cv2
+import numpy as np
+import tensorflow as tf
+from gi.repository import Gst, GLib
 
 # Initialize GStreamer
 Gst.init(None)
+
+# Load the TensorFlow model
+MODEL_DIR = '../models/trained_models/Model_0002_CNN_ResNet__loss_sparse_categorical_crossentropy'
+model = tf.keras.models.load_model(MODEL_DIR)
+
+def capture_frame(buffer, width, height):
+    # Memory mapping the buffer to access the data
+    success, map_info = buffer.map(Gst.MapFlags.READ)
+    if not success:
+        raise RuntimeError('Could not map buffer for reading')
+
+    # Create a NumPy array from the buffer data
+    # NV12 is 12 bits per pixel, so the size is width * height * 1.5
+    # However, we are reading 8 bits at a time (np.uint8), so the size in the frombuffer should be width * height * 3 // 2
+    frame = np.frombuffer(map_info.data, dtype=np.uint8, count=width * height * 3 // 2)
+
+    # Unmap the buffer when done
+    buffer.unmap(map_info)
+
+    # Convert NV12 data to RGB (cv2.cvtColor expects the frame height to be 1.5 times the NV12 height because of the UV plane)
+    frame = cv2.cvtColor(frame.reshape(height * 3 // 2, width), cv2.COLOR_YUV2RGB_NV12)
+
+    # The frame can be further processed (e.g., resized) if necessary
+    frame = cv2.resize(frame, (256, 256))  # Resize to the input shape expected by the model
+
+    return frame
+
+def preprocess_image(image):
+    # Preprocess the image as required by the model
+    image = image.astype('float32') / 255.0
+    return image
+
+def perform_prediction(image_np):
+    # Use the preprocessed image to perform a prediction
+    prediction = model.predict(np.expand_dims(image_np, axis=0))
+    # Handle the prediction
+    print(f"Prediction: {prediction}")
+
+def on_new_sample(appsink):
+    sample = appsink.emit('pull-sample')
+    if isinstance(sample, Gst.Sample):
+        buffer = sample.get_buffer()
+        caps = sample.get_caps()
+        structure = caps.get_structure(0)
+        width = structure.get_value('width')
+        height = structure.get_value('height')
+
+        frame = capture_frame(buffer, width, height)
+        preprocessed_frame = preprocess_image(frame)
+        perform_prediction(preprocessed_frame)
+
+    return Gst.FlowReturn.OK
+
 
 # Create the elements
 source = Gst.ElementFactory.make('nvarguscamerasrc', 'source')
@@ -53,28 +108,22 @@ if not transform.link(sink):
 
 # Set the pipeline to "PLAYING" state
 print("Starting pipeline")
-pipeline.set_state(Gst.State.PLAYING)
+pipeline = Gst.Pipeline.new('test-pipeline')
 
+appsink = Gst.ElementFactory.make('appsink', 'appsink')
+appsink.set_property('emit-signals', True)
+appsink.connect('new-sample', on_new_sample)
 
-# Start playing
-ret = pipeline.set_state(Gst.State.PLAYING)
-if ret == Gst.StateChangeReturn.FAILURE:
-    print("Unable to set the pipeline to the playing state.")
-    exit(-1)
+# Add and link the appsink element just before the sink element
+pipeline.add(appsink)
+vidconv2.link(appsink)
+appsink.link(sink)
 
-# Wait until error or EOS
-bus = pipeline.get_bus()
-msg = bus.timed_pop_filtered(Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
-
-
-# Parse message
-if msg:
-    if msg.type == Gst.MessageType.ERROR:
-        err, debug = msg.parse_error()
-        print(f"Error received from element {msg.src.get_name()}: {err}")
-        print(f"Debugging information: {debug}")
-    elif msg.type == Gst.MessageType.EOS:
-        print("End-Of-Stream reached.")
-
-# Free resources
-pipeline.set_state(Gst.State.NULL)
+# Start the GStreamer main loop
+loop = GLib.MainLoop()
+try:
+    loop.run()
+except KeyboardInterrupt:
+    pass
+finally:
+    pipeline.set_state(Gst.State.NULL)
