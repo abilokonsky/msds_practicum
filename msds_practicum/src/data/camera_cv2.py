@@ -1,7 +1,7 @@
 import cv2
 
 # Open the camera device
-cap = cv2.VideoCapture('/dev/video0')  # Adjust the device number as necessary
+cap = cv2.VideoCapture('/dev/video1')  # Adjust the device number as necessary
 
 # Capture a frame
 ret, frame = cap.read()
