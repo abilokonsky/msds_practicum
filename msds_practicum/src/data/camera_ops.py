@@ -72,7 +72,7 @@ def perform_prediction(image_np):
     prediction_array = np.array([model.predict(np.expand_dims(image_np, axis=0))], dtype=float)
     top_predictions = processor.process(prediction_array)
     for i, (class_name, probability) in enumerate(top_predictions, start=1):
-    prediction_str = str(f"{class_name} certainty = {probability*100:.2f}% " )
+        prediction_str = str(f"{class_name} certainty = {probability*100:.2f}% " )
 
     return prediction_str
 
