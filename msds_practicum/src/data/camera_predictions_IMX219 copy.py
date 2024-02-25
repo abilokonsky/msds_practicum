@@ -10,14 +10,11 @@ from gi.repository import Gst, GLib
 # Initialize GStreamer
 Gst.init(None)
 
-# Global variable to store the latest prediction
-latest_prediction = {'text': ''}
-
 # Define the GStreamer pipeline
 pipeline_description = (
     "nvarguscamerasrc ! "
     "video/x-raw(memory:NVMM),width=3820, height=2464, framerate=21/1, format=NV12 ! "
-    "nvvidconv flip-method=2 ! video/x-raw,width=960, height=616 ! "
+    "nvvidconv flip-method=0 ! video/x-raw,width=960, height=616 ! "
     "tee name=t "
     "t. ! queue ! videoconvert ! video/x-raw, format=(string)BGR ! appsink name=mysink emit-signals=true max-buffers=1 drop=true "
     "t. ! queue ! videoconvert ! xvimagesink sync=false"
@@ -43,7 +40,7 @@ class PredictionProcessor:
         prediction = prediction.flatten()
         
         # Get indices of the top 3 predictions in descending order
-        top_indices = np.argsort(prediction)[::-1][:3]
+        top_indices = np.argsort(prediction)[::-1][:1]
         
         # Retrieve the class names and probabilities for the top 3 predictions
         top_classes = [self.class_names[i] for i in top_indices]
@@ -55,27 +52,37 @@ class PredictionProcessor:
 class_names = [f"{5 * i} degrees" for i in range(1, 20)]  # Adjust to match the number of your classes
 processor = PredictionProcessor(class_names)
 
+
+
+
+def perform_prediction(image_np):
+
+    prediction_array = np.array([model.predict(np.expand_dims(image_np, axis=0))], dtype=float)
+    top_predictions = processor.process(prediction_array)
+    for i, (class_name, probability) in enumerate(top_predictions, start=1):
+        prediction_str = str(f"{class_name} certainty = {probability*100:.2f}% " )
+
+    return prediction_str
+
 def frame_processor():
     while True:
         frame_rgb = frame_queue.get()
         if frame_rgb is None:  # Termination signal
             break
 
+        # Your existing sliding window and prediction logic
         window_size = (256, 256)  # Window size
         stride = 64  # Stride for sliding the window
         for y in range(0, frame_rgb.shape[0] - window_size[1] + 1, stride):
             for x in range(0, frame_rgb.shape[1] - window_size[0] + 1, stride):
                 window = frame_rgb[y:y + window_size[1], x:x + window_size[0]]
+                
                 prediction = model.predict(np.expand_dims(window, axis=0))
                 top_predictions = processor.process(prediction)
                 prediction_str = " | ".join([f"{class_name}: {probability*100:.2f}%" for class_name, probability in top_predictions])
-                
-                print(prediction_str)
 
-                # Update global variable with the latest prediction
-                global latest_prediction
-                latest_prediction['text'] = prediction_str
-
+                # Example: Print or process the prediction for each window
+                print(f"Window [{x}, {y}] Prediction: {prediction_str}")
 
 # Start the frame processing thread
 processing_thread = Thread(target=frame_processor)
@@ -92,10 +99,6 @@ def on_new_sample(sink, data):
         # Assuming BGR format, create an ndarray
         frame = np.ndarray(shape=(616, 960, 3), buffer=map_info.data, dtype=np.uint8)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        cv2.putText(frame_rgb, latest_prediction['text'], (50, frame_rgb.shape[0] - 50), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
 
         if not frame_queue.full():
             frame_queue.put(frame_rgb)  # Add frame to processing queue
