@@ -13,5 +13,5 @@ Using synthetically trained computer vision to detect changes in the set angle o
 ##### Special Note: I have a few dozen notebooks.  I only uploaded a few to show concept of how I trained data.
 
 ## Deploy
-### Run Live Inference via the orin nano .py files
+### Run Live Inference.  200x200 Arrays are what I used (Recommend 224x224 for future developers as this is the imagenet default)
 ![predictions](https://github.com/abilokonsky/msds_practicum/assets/62521066/9d08cc2d-dc7a-402b-a79d-f29a6fbda702)
