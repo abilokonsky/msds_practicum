@@ -5,7 +5,11 @@ Using synthetically trained computer vision to detect changes in the set angle o
 
 ## 1 Generate Synthetic Dataset
 ### See Notebook on Blender Model Generation
-##### You need to run the py file for your model inside of blender's "Scripting" tab.  This is the .txt document under "notebooks"
+
+##### You need to run the py file for your model inside of blender's "Scripting" tab in a .blend file.  
+This is the .txt document under "notebooks"
+a .blend file is saved for reference.
+
 ![Screenshot from 2024-05-01 20-42-32](https://github.com/abilokonsky/msds_practicum/assets/62521066/ca005dd1-9173-449a-929a-12cf8554cd90)
 
 ## 2 Train Models
