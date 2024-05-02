@@ -1,7 +1,10 @@
 # Objective
-Using synthetically trained computer vision to detect changes in  elevation and azimuth of a device.
+Use synthetically generated images to train a set of computer vision models that can detect changes in elevation and azimuth of a device.
 
-# 3 Easy Steps
+
+
+
+# Setup: 3 Easy Steps
 
 ## 1 Generate Synthetic Dataset
 ### See Notebook on Blender Model Generation
