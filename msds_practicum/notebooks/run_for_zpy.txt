@@ -1,0 +1,192 @@
+""" ZPY for MSDS_Practicum"""
+
+import logging
+import math
+import random
+import bpy
+import zpy
+from pathlib import Path
+
+
+
+log = logging.getLogger("zpy")
+
+
+def run(num_images = 3600):
+        # Random seed results in unique behavior
+    zpy.blender.set_seed()
+
+    # Create the saver object
+    saver = zpy.saver_image.ImageSaver(output_dir = Path('/home/andrey/msds_practicum/msds_practicum/data/raw/85/'), description="Domain randomized T92_85")
+
+    # Add the target_object category
+    target_object_seg_color = zpy.color.random_color(output_style="frgb")
+    saver.add_category(name="T92_85", color=target_object_seg_color)
+
+    # Segment Suzzanne (make sure a material exists for the object!)
+    zpy.objects.segment("T92_85", color=target_object_seg_color)
+
+    # Save the positions of objects so we can jitter them later
+    zpy.objects.save_pose("Camera", "cam_pose")
+    zpy.objects.save_pose("T92_85", "T92_85_pose")
+    
+
+    asset_dir = Path(bpy.data.filepath).parent
+    texture_paths = [
+        asset_dir / Path("textures/texture_01.jpeg"),
+        asset_dir / Path("textures/texture_02.jpeg"),
+        asset_dir / Path("textures/texture_03.jpeg"),
+        asset_dir / Path("textures/texture_04.jpeg"),
+        asset_dir / Path("textures/texture_05.jpg"),
+        asset_dir / Path("textures/texture_06.jpg"),
+        asset_dir / Path("textures/texture_07.jpg"),
+        asset_dir / Path("textures/texture_08.jpg"),
+        asset_dir / Path("textures/texture_09.jpg"),
+        asset_dir / Path("textures/texture_10.jpg"),
+        asset_dir / Path("textures/texture_11.jpg"),
+        ]
+
+    HDRI_paths = [
+        asset_dir / Path("hdr/001_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/007_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/010_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/020_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/049_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/064_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/069_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/073_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/090_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/105_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/109_hdrmaps_com_free_10K.hdr"),
+        asset_dir / Path("hdr/138_hdrmaps_com_free_10K.hdr"),
+    ]
+
+
+
+    # Run the sim.
+    for step_idx in zpy.blender.step(num_steps =num_images):
+        
+        # Example logging
+        log.info("This is an info log")
+        log.debug("This is a debug log")
+
+
+
+        # Return camera and target_object to original positions
+        zpy.objects.restore_pose("Camera", "cam_pose")
+        zpy.objects.restore_pose("T92_85", "T92_85_pose")
+
+
+        # rotate pose
+    
+        zpy.objects.rotate(
+            "T92_85",
+            rotation=(
+                (-0),
+                (-0),
+                -(((math.pi)/180)*step_idx),
+            ),
+        )
+
+        # Jitter the camera pose
+        zpy.objects.jitter(
+            "Camera",
+            translate_range=(
+                (-0, 0),
+                (-0, 0),
+                (-5, 120),
+            ),
+        )
+        
+        # Camera should be looking at target_object
+        zpy.camera.look_at("Camera", bpy.data.objects["T92_85"].location)
+
+        # hdr loader -- like a pre-made background with lighting
+        zpy.hdris.load_hdri(random.choice(HDRI_paths),(1.0,1.0,1.0),True)
+        
+        # this is the texture for the tank
+        texture_path = random.choice(texture_paths)
+        new_mat = zpy.material.make_mat_from_texture(texture_path)
+        zpy.material.set_mat("T92_85", new_mat)
+        zpy.objects.segment("T92_85", color=target_object_seg_color)
+        zpy.material.jitter(bpy.data.objects["T92_85"].active_material)
+
+        # Jitter the HSV for empty and full images
+        hsv = (
+            random.uniform(0.49, 0.51),  # (hue)
+            random.uniform(0.95, 1.1),  # (saturation)
+            random.uniform(0.75, 1.2),  # (value)
+        )
+
+        # Name for each of the output images
+        rgb_image_name = zpy.files.make_rgb_image_name(step_idx)
+        iseg_image_name = zpy.files.make_iseg_image_name(step_idx)
+        depth_image_name = zpy.files.make_depth_image_name(step_idx)
+
+        # Render image
+        zpy.render.render(
+            rgb_path=saver.output_dir / rgb_image_name,
+            iseg_path=saver.output_dir / iseg_image_name, 
+            depth_path=saver.output_dir / depth_image_name,
+            width=256,
+            height=256,
+            hsv=hsv,
+        )
+
+        # Add images to saver
+        saver.add_image(
+            name=rgb_image_name,
+            style="default",
+            output_path=saver.output_dir / rgb_image_name,
+            frame=step_idx,
+            width=256,
+            height=256
+        )
+        saver.add_image(
+            name=iseg_image_name,
+            style="segmentation",
+            output_path=saver.output_dir / iseg_image_name,
+            frame=step_idx,
+            width=256,
+            height=256
+        )
+        saver.add_image(
+            name=depth_image_name,
+            style="depth",
+            output_path=saver.output_dir / depth_image_name,
+            frame=step_idx,
+            width=256,
+            height=256
+        )
+
+        # Add annotation to segmentation image
+        saver.add_annotation(
+            image=rgb_image_name,
+            seg_image=iseg_image_name,
+            seg_color=target_object_seg_color,
+            category="T92_85",
+        )
+            
+        # Return camera and target_object to original positions
+        zpy.objects.restore_pose("Camera", "cam_pose")
+        zpy.objects.restore_pose("T92_85", "T92_85_pose")
+    # Write out annotations
+    saver.output_annotated_images(Path('/home/andrey/msds_practicum/msds_practicum/data/raw/85/'))
+    saver.output_meta_analysis(Path('/home/andrey/msds_practicum/msds_practicum/data/raw/85/'))
+
+    # ZUMO Annotations
+    zpy.output_zumo.OutputZUMO(saver).output_annotations(Path('/home/andrey/msds_practicum/msds_practicum/data/raw/85/'))
+
+    # COCO Annotations
+    zpy.output_coco.OutputCOCO(saver).output_annotations(Path('/home/andrey/msds_practicum/msds_practicum/data/raw/85/'))
+
+
+if __name__ == "__main__":
+    # Set the logger levels
+    zpy.logging.set_log_levels("info")
+
+    # Parse the gin-config text block
+    zpy.blender.parse_config("config")
+
+    # Run the sim
+    run()
