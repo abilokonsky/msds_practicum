@@ -32,4 +32,7 @@ Reccommend visiting a tutorial via Zumo-Labs.  Linked in Attribution.
 ## 3. Deploy
 ### Run Live Inference.  
 200x200 images are what I eventually used for training, however after reflection and some pre-built models not working well with my images, I recommend 224x224 for future developers as this is the imagenet default)
+
+
+
 ![predictions](https://github.com/abilokonsky/msds_practicum/assets/62521066/9d08cc2d-dc7a-402b-a79d-f29a6fbda702)
