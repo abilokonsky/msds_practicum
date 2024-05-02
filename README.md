@@ -9,6 +9,9 @@ Using synthetically trained computer vision to detect changes in the set angle o
 ##### You need to run the py file for your model inside of blender's "Scripting" tab in a .blend file.  
 This is the .txt document under "notebooks"
 a .blend file is saved for reference.
+There are two dependent folders in data/external/ that need to be added, hdr and textures.  
+HDR's are 100's of MB's and can be sourced from a websearch. I've linked my source in the attribution page.  Textures can be png's or jpegs you want to cover the model with.
+
 
 ![Screenshot from 2024-05-01 20-42-32](https://github.com/abilokonsky/msds_practicum/assets/62521066/ca005dd1-9173-449a-929a-12cf8554cd90)
 
