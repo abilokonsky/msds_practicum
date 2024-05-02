@@ -1,5 +1,5 @@
 # Objective
-Using synthetically trained computer vision to detect changes in the set angle of a device.
+Using synthetically trained computer vision to detect changes in  elevation and azimuth of a device.
 
 # 3 Easy Steps
 
